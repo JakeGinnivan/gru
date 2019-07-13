@@ -1,0 +1,20 @@
+{
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/.DS_Store": true,
+        "**/*.sqlite": true,
+        "**/*.map": {
+            "when": "$(basename)"
+        },
+        "**/*.js": {
+            "when": "$(basename).ts"
+        },
+        "**/*?.js": {
+            "when": "$(basename).tsx"
+        }
+    },
+    "editor.formatOnSave": true,
+    "eslint.validate": ["javascript", { "language": "typescript", "autoFix": true }]
+}

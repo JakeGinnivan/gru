@@ -1,0 +1,32 @@
+{
+    "name": "gru",
+    "version": "1.0.0",
+    "main": "index.js",
+    "license": "MIT",
+    "scripts": {
+        "build": "yarn build:es2015 && yarn build:cjs",
+        "build:es2015": "tsc --module es2015 --target es2015 --outDir dist/es2015 --noEmit false",
+        "build:cjs": "tsc --module commonjs --target es5 --outDir dist/cjs --noEmit false",
+        "pretest": "tsc -p src/fixtures",
+        "test": "yarn jest",
+        "lint": "eslint --ext .js,.ts src"
+    },
+    "devDependencies": {
+        "@types/isomorphic-fetch": "^0.0.34",
+        "@types/jest": "^24.0.15",
+        "@types/node": "^9.6.6",
+        "@typescript-eslint/eslint-plugin": "^1.12.0",
+        "@typescript-eslint/parser": "^1.12.0",
+        "eslint": "^5.16.0",
+        "eslint-config-prettier": "^6.0.0",
+        "eslint-plugin-react": "^7.14.2",
+        "eslint-plugin-react-hooks": "^1.6.1",
+        "isomorphic-fetch": "^2.2.1",
+        "jest": "^24.8.0",
+        "prettier": "^1.18.2",
+        "ts-jest": "^24.0.2",
+        "tslib": "^1.10.0",
+        "typescript": "^3.5.3",
+        "typescript-log": "^1.1.0"
+    }
+}

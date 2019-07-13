@@ -1,0 +1,7 @@
+node_modules
+dist
+http-*.log
+
+src/**/*.js
+src/clustering/fixtures/**/*.d.ts
+src/**/*.map
