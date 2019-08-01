@@ -26,11 +26,11 @@ type MasterMessages<MasterArgs> = GetArgsResponseMessage<MasterArgs>
 type WorkerMessages = GetArgsMessage
 
 export interface Options<MasterArgs> {
-    /** Number of workers (cpu count), if 0, starts in process. Defaults to # of cpu cores */
+    /** Number of workers (default cpu count), if 0, starts in process. Defaults to # of cpu cores */
     workers: number
     /** ms to keep cluster alive (until-killed) */
     lifetime: number | 'until-killed'
-    /** ms grace period after worker SIGTERM (5000) */
+    /** ms grace period after worker SIGTERM (default 5000) */
     grace: number
     /** Logger */
     logger?: Logger
