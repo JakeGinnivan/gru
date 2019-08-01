@@ -1,6 +1,6 @@
 {
-    "name": "gru",
-    "version": "1.0.0",
+    "name": "node-gru",
+    "version": "0.0.1",
     "main": "dist/cjs/index.js",
     "module": "dist/es2015/index.js",
     "license": "MIT",
