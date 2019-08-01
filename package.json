@@ -10,7 +10,8 @@
         "build:cjs": "tsc --module commonjs --target es5 --outDir dist/cjs --noEmit false",
         "pretest": "tsc -p src/fixtures",
         "test": "yarn jest",
-        "lint": "eslint --ext .js,.ts src"
+        "lint": "eslint --ext .js,.ts src",
+        "verify": "yarn build && yarn test && yarn lint"
     },
     "devDependencies": {
         "@types/isomorphic-fetch": "^0.0.35",
