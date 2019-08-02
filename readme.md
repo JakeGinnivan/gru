@@ -1,5 +1,7 @@
 # Gru
 
+[![Build Status](https://travis-ci.com/JakeGinnivan/gru.svg?branch=master)](https://travis-ci.com/JakeGinnivan/gru)
+
 Gru is a node clustering helper, because he is the master of the minions
 
 ![Gru](./assets/gru.jpg)
