@@ -1,7 +1,7 @@
 import path from 'path'
 import os from 'os'
-import fs from 'fs'
-import fetch from 'isomorphic-fetch'
+// import fs from 'fs'
+// import fetch from 'isomorphic-fetch'
 import { spawn, SpawnOptions, ChildProcess } from 'child_process'
 
 import { consoleLogger, Levels } from 'typescript-log'
@@ -22,7 +22,7 @@ const asyncMasterFailureCmd = getPath('async-master-fail')
 const asyncMasterSyncFailureCmd = getPath('async-master-fail-sync')
 const asyncWorkerFailureCmd = getPath('async-worker-fail')
 const gracefulCmd = getPath('graceful')
-const reloadCmd = getPath('reload')
+// const reloadCmd = getPath('reload')
 const killCmd = getPath('kill')
 const infiniteCmd = getPath('infinite')
 const inlineWorkerCmd = getPath('inline-worker')
@@ -161,99 +161,6 @@ describe('signal handling', () => {
             const result = await run(killCmd, {}, child => setTimeout(() => child.kill(), 750))
             expect(result.endTime - result.startTime - 1000).toBeLessThan(100)
         })
-    })
-
-    it('replaces workers on SIGHUP', async () => {
-        const timestamp = Number(new Date())
-        const env = {
-            PATH: process.env.PATH,
-            WORKERS: 1,
-            GRACE: 400,
-            DELAY: 10,
-            PORT: 8000,
-            HTTP_LOG_FILE: `http-${timestamp}.log`,
-        }
-
-        try {
-            const startupDelay = 1000
-            const reloads = 4
-            const requests = 40
-            await run(reloadCmd, { env }, child => {
-                for (let i = 1; i <= reloads; i++) {
-                    setTimeout(() => {
-                        child.kill('SIGHUP')
-                    }, startupDelay + 200 * i)
-                }
-
-                for (let i = 1; i <= requests; i++) {
-                    setTimeout(() => {
-                        fetch(`http://localhost:${env.PORT}`)
-                    }, startupDelay + 50 * i)
-                }
-
-                setTimeout(() => {
-                    child.kill()
-                }, 4000)
-            })
-
-            const pids = fs
-                .readFileSync(env.HTTP_LOG_FILE)
-                .toString()
-                .split('\r\n')
-                .filter(x => x && x.length > 0)
-                .map(x => JSON.parse(x).pid)
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .reduce((s: any, x: any) => s.add(x), new Set())
-
-            expect(pids && pids.size).toBeCloseTo(1 + env.WORKERS * reloads)
-        } finally {
-            try {
-                fs.unlinkSync(env.HTTP_LOG_FILE)
-                // eslint-disable-next-line no-empty
-            } catch {}
-        }
-    })
-
-    it('will fail if GRACE < DELAY', async () => {
-        const timestamp = Number(new Date())
-        const env = {
-            PATH: process.env.PATH,
-            WORKERS: 1,
-            GRACE: 10,
-            DELAY: 400,
-            PORT: 8000,
-            HTTP_LOG_FILE: `http-${timestamp}.log`,
-        }
-        const startupDelay = 1000
-        const reloads = 4
-        const requests = 40
-        let failures = 0
-        try {
-            await run(reloadCmd, { env }, child => {
-                for (let i = 1; i <= reloads; i++) {
-                    setTimeout(() => {
-                        child.kill('SIGHUP')
-                    }, startupDelay + 200 * i)
-                }
-
-                for (let i = 1; i <= requests; i++) {
-                    setTimeout(() => {
-                        fetch(`http://localhost:${env.PORT}`).catch(() => failures++)
-                    }, startupDelay + 50 * i)
-                }
-
-                setTimeout(() => {
-                    child.kill()
-                }, 4000)
-            })
-
-            expect(failures).toBeGreaterThanOrEqual(reloads)
-        } finally {
-            try {
-                fs.unlinkSync(env.HTTP_LOG_FILE)
-                // eslint-disable-next-line no-empty
-            } catch {}
-        }
     })
 })
 

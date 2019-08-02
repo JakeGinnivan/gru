@@ -157,31 +157,7 @@ export async function gru<MasterArgs = undefined>(
 
     function listen() {
         cluster.on('exit', workerExited)
-        process
-            .on('SIGINT', shutdown)
-            .on('SIGTERM', shutdown)
-            // graceful reload
-            .on('SIGHUP', reloadWorkers)
-    }
-
-    function reloadWorkers() {
-        // save a list of worker ids
-        const workerIds: string[] = Object.keys(cluster.workers)
-
-        // add more workers
-        for (let i = 0; i < options.workers; i++) {
-            startWorker()
-        }
-
-        // disconnect old workers
-        setTimeout(() => {
-            for (const id of workerIds) {
-                const worker = cluster.workers[id]
-                if (worker) {
-                    worker.disconnect()
-                }
-            }
-        }, options.grace)
+        process.on('SIGINT', shutdown).on('SIGTERM', shutdown)
     }
 
     function resize() {
@@ -229,7 +205,6 @@ export async function gru<MasterArgs = undefined>(
 
         process.removeListener('SIGINT', shutdown)
         process.removeListener('SIGTERM', shutdown)
-        process.removeListener('SIGHUP', reloadWorkers)
 
         // tslint:disable-next-line:forin
         for (const id in cluster.workers) {
