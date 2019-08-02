@@ -6,9 +6,9 @@
     "license": "MIT",
     "scripts": {
         "build": "yarn build:es2015 && yarn build:cjs",
-        "build:es2015": "tsc --module es2015 --target es2015 --outDir dist/es2015 --noEmit false",
-        "build:cjs": "tsc --module commonjs --target es5 --outDir dist/cjs --noEmit false",
-        "pretest": "tsc -p src/fixtures",
+        "build:es2015": "tsc -p ./tsconfig.build.json --module es2015 --target es2015 --outDir dist/es2015",
+        "build:cjs": "tsc -p ./tsconfig.build.json --module commonjs --target es5 --outDir dist/cjs",
+        "pretest": "tsc -p src/fixtures --noEmit false",
         "test": "yarn jest",
         "lint": "eslint --ext .js,.ts src",
         "verify": "yarn build && yarn test && yarn lint"

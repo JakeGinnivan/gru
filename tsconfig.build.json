@@ -1,0 +1,9 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "noEmit": false /* Do not emit outputs. */,
+        "importHelpers": true /* Import emit helpers from 'tslib'. */,
+        "noEmitHelpers": true
+    },
+    "exclude": ["dist", "**/*test.ts", "**/fixtures/*"]
+}
