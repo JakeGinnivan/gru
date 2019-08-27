@@ -10,6 +10,7 @@ const DEFAULT_OPTIONS = {
     workers: cpuCount,
     lifetime: 'until-killed' as 'until-killed',
     grace: 5000,
+    masterArgsWait: 5000,
 }
 
 interface GetArgsMessage {
@@ -43,6 +44,8 @@ export interface Options<MasterArgs> {
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     start: (args: { id: string; masterArgs: MasterArgs | undefined }) => Promise<any> | void
+    /** ms to wait for master to become available to supply masterArgs (default 5000) */
+    masterArgsWait?: number
 }
 
 let called = false
@@ -254,7 +257,7 @@ export async function gru<MasterArgs = undefined>(
                         'No response from master process for master arguments before timeout',
                     )
                     resolve(undefined)
-                }, 5000)
+                }, options.masterArgsWait)
 
                 // Setup response handler
                 process.once('message', (masterMsg: MasterMessages<MasterArgs>) => {

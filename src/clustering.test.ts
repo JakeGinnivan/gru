@@ -18,6 +18,7 @@ const cpusCmd = getPath('cpus')
 const masterCmd = getPath('master')
 const asyncMasterCmd = getPath('async-master')
 const asyncMasterArgumentsCmd = getPath('async-master-arguments')
+const asyncMasterArgumentsBlockedCmd = getPath('async-master-arguments-blocked')
 const asyncMasterFailureCmd = getPath('async-master-fail')
 const asyncMasterSyncFailureCmd = getPath('async-master-fail-sync')
 const asyncWorkerFailureCmd = getPath('async-worker-fail')
@@ -182,6 +183,16 @@ worker
  INFO Starting 2 workers
 worker { test: 1, test2: [ 'val' ] }
 worker { test: 1, test2: [ 'val' ] }
+`)
+    })
+
+    it('supplies undefined masterArgs to workers if master is unavailable', async () => {
+        const result = await run(asyncMasterArgumentsBlockedCmd, {})
+
+        expect(result.stdout).toBe(`master
+ INFO Starting 1 workers
+ WARN No response from master process for master arguments before timeout
+worker undefined
 `)
     })
 
