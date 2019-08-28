@@ -16,7 +16,7 @@ gru<Args>({
                 const end = Date.now() + 100
                 while (Date.now() < end) {
                     // @ts-ignore
-                    const blocking = 1 + 2 + 3
+                    const _blocking = 1 + 2 + 3
                 }
             })
 
