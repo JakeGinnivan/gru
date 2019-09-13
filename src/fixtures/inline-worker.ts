@@ -7,10 +7,10 @@ gru({
     workers: 0,
     master: () => {
         // eslint-disable-next-line no-console
-        console.log('master')
+        console.log('master output')
     },
     start: () => {
         // eslint-disable-next-line no-console
-        console.log('worker')
+        console.log('worker output')
     },
 })
