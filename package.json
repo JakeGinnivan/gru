@@ -11,9 +11,12 @@
         "pretest": "tsc -p src/fixtures --noEmit false",
         "test": "yarn jest",
         "lint": "eslint --ext .js,.ts src",
-        "verify": "yarn build && yarn test && yarn lint"
+        "verify": "yarn build && yarn test && yarn lint",
+        "changeset": "changeset",
+        "release": "yarn verify && changeset publish"
     },
     "devDependencies": {
+        "@changesets/cli": "^2.6.2",
         "@types/jest": "^24.0.16",
         "@types/node": "^10.14.14",
         "eslint-config-wanews-base": "^1.0.0",
