@@ -233,10 +233,10 @@ function run(file: string, options: SpawnOptions, spawned?: (child: ChildProcess
 
         let stdout = ''
         const startTime = Date.now()
-        child.stdout.on('data', data => {
+        child.stdout!.on('data', data => {
             stdout += data.toString()
         })
-        child.stderr.on('data', data => {
+        child.stderr!.on('data', data => {
             stdout += data.toString()
         })
         child.on('error', data => {
