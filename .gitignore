@@ -5,3 +5,4 @@ http-*.log
 src/**/*.js
 src/clustering/fixtures/**/*.d.ts
 src/**/*.map
+src/.DS_Store

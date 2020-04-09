@@ -57,7 +57,7 @@ let called = false
  */
 export async function gru<MasterArgs = undefined>(
     startOrOptions:
-        | Partial<Options<MasterArgs>> & { start: Options<MasterArgs>['start'] }
+        | (Partial<Options<MasterArgs>> & { start: Options<MasterArgs>['start'] })
         | (() => void),
 ) {
     let masterArgs: MasterArgs | undefined
@@ -94,7 +94,7 @@ export async function gru<MasterArgs = undefined>(
         // If the worker start function returns a promise
         // handle errors and shutdown gracefully
         if (workerStart) {
-            workerStart.catch(err => {
+            workerStart.catch((err) => {
                 logger.error(
                     { err },
                     `Worker ${cluster.worker.id} failed to start, shutting down worker`,
@@ -144,7 +144,7 @@ export async function gru<MasterArgs = undefined>(
         const workerStart = options.start({ id: 'master', masterArgs })
 
         if (workerStart) {
-            workerStart.catch(err => {
+            workerStart.catch((err) => {
                 logger.error({ err }, `Inline worker failed to start, exiting`)
                 process.exit(1)
             })
@@ -249,7 +249,7 @@ export async function gru<MasterArgs = undefined>(
     }
 
     function getMasterArgsInWorker() {
-        return new Promise<MasterArgs | undefined>(resolve => {
+        return new Promise<MasterArgs | undefined>((resolve) => {
             if (process.send) {
                 // And a 5 second timeout
                 const timeoutId = setTimeout(() => {
@@ -280,7 +280,7 @@ export async function gru<MasterArgs = undefined>(
 }
 
 function deleteUndefinedKeys<T extends object>(obj: T): T {
-    Object.keys(obj).forEach(key => {
+    Object.keys(obj).forEach((key) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((obj as any)[key] === undefined) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

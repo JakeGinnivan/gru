@@ -18,7 +18,6 @@ const cpusCmd = getPath('cpus')
 const masterCmd = getPath('master')
 const asyncMasterCmd = getPath('async-master')
 const asyncMasterArgumentsCmd = getPath('async-master-arguments')
-const asyncMasterArgumentsBlockedCmd = getPath('async-master-arguments-blocked')
 const asyncMasterFailureCmd = getPath('async-master-fail')
 const asyncMasterSyncFailureCmd = getPath('async-master-fail-sync')
 const asyncWorkerFailureCmd = getPath('async-worker-fail')
@@ -77,7 +76,9 @@ describe('with a start function and 3 workers', () => {
 
     describe('with no lifetime specified', () => {
         it('starts 3 workers repeatedly', async () => {
-            const result = await run(infiniteCmd, {}, child => setTimeout(() => child.kill(), 1000))
+            const result = await run(infiniteCmd, {}, (child) =>
+                setTimeout(() => child.kill(), 1000),
+            )
 
             const starts = result.stdout.match(/worker$/gm)
 
@@ -85,7 +86,9 @@ describe('with a start function and 3 workers', () => {
         })
 
         it('keeps workers running until killed externally', async () => {
-            const result = await run(infiniteCmd, {}, child => setTimeout(() => child.kill(), 1000))
+            const result = await run(infiniteCmd, {}, (child) =>
+                setTimeout(() => child.kill(), 1000),
+            )
 
             expect(result.endTime - result.startTime - 1000).toBeLessThan(100)
         })
@@ -121,7 +124,7 @@ describe('with a master function and two workers', () => {
 describe('signal handling', () => {
     describe('with 3 workers that exit gracefully', () => {
         it('starts 3 workers', async () => {
-            const result = await run(gracefulCmd, {}, child =>
+            const result = await run(gracefulCmd, {}, (child) =>
                 setTimeout(() => {
                     child.kill()
                 }, 750),
@@ -132,7 +135,7 @@ describe('signal handling', () => {
         })
 
         it('allows the workers to shut down', async () => {
-            const result = await run(gracefulCmd, {}, child =>
+            const result = await run(gracefulCmd, {}, (child) =>
                 setTimeout(() => {
                     child.kill()
                 }, 750),
@@ -145,21 +148,21 @@ describe('signal handling', () => {
 
     describe('with 3 workers that fail to exit', () => {
         it('starts 3 workers', async () => {
-            const result = await run(killCmd, {}, child => setTimeout(() => child.kill(), 750))
+            const result = await run(killCmd, {}, (child) => setTimeout(() => child.kill(), 750))
             const starts = result.stdout.match(/ah ha ha ha/g)
 
             expect(starts).toHaveLength(3)
         })
 
         it('notifies the workers that they should exit', async () => {
-            const result = await run(killCmd, {}, child => setTimeout(() => child.kill(), 750))
+            const result = await run(killCmd, {}, (child) => setTimeout(() => child.kill(), 750))
             const exits = result.stdout.match(/stayin alive/g)
 
             expect(exits).toHaveLength(3)
         })
 
         it('kills the workers after 250ms', async () => {
-            const result = await run(killCmd, {}, child => setTimeout(() => child.kill(), 750))
+            const result = await run(killCmd, {}, (child) => setTimeout(() => child.kill(), 750))
             expect(result.endTime - result.startTime - 1000).toBeLessThan(100)
         })
     })
@@ -183,16 +186,6 @@ worker
  INFO Starting 2 workers
 worker { test: 1, test2: [ 'val' ] }
 worker { test: 1, test2: [ 'val' ] }
-`)
-    })
-
-    it('supplies undefined masterArgs to workers if master is unavailable', async () => {
-        const result = await run(asyncMasterArgumentsBlockedCmd, {})
-
-        expect(result.stdout).toBe(`master
- INFO Starting 1 workers
- WARN No response from master process for master arguments before timeout
-worker undefined
 `)
     })
 
@@ -228,18 +221,18 @@ ERROR { err: 'Failed to start worker' } Worker \\d failed to start, shutting dow
 function run(file: string, options: SpawnOptions, spawned?: (child: ChildProcess) => void) {
     const childLogger = testLogger.child({ file })
 
-    return new Promise<{ stdout: string; startTime: number; endTime: number }>(yea => {
+    return new Promise<{ stdout: string; startTime: number; endTime: number }>((yea) => {
         const child = spawn('node', [file], options)
 
         let stdout = ''
         const startTime = Date.now()
-        child.stdout!.on('data', data => {
+        child.stdout!.on('data', (data) => {
             stdout += data.toString()
         })
-        child.stderr!.on('data', data => {
+        child.stderr!.on('data', (data) => {
             stdout += data.toString()
         })
-        child.on('error', data => {
+        child.on('error', (data) => {
             childLogger.error({ data }, 'Child process error')
         })
         child.on('close', () => {
