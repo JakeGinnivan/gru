@@ -1,6 +1,6 @@
 {
     "extends": ["wanews-base"],
     "rules": {
-        "@typescript-eslint/no-unused-vars": [true, { "ignore-pattern": "^_" }]
+        "@typescript-eslint/no-unused-vars": [1, { "ignore-pattern": "^_" }]
     }
 }
