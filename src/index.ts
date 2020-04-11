@@ -3,8 +3,10 @@ import os from 'os'
 import fs from 'fs'
 
 import { Logger, noopLogger } from 'typescript-log'
+import { WorkerMap, getWorkerName } from './worker-map'
 
 const cpuCount = os.cpus().length
+const fiveMinutesMS = 5 * 60 * 1000
 
 const DEFAULT_OPTIONS = {
     workers: cpuCount,
@@ -42,13 +44,21 @@ export interface Options<MasterArgs> {
      *
      * @argument masterArgs if master returns a promise this will be the resolved value
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    start: (args: { id: string; masterArgs: MasterArgs | undefined }) => Promise<any> | void
+    start?: (args: { id: string; masterArgs: MasterArgs | undefined }) => Promise<any> | void
+
+    dedicatedWorkers?: {
+        [name: string]: (args: {
+            id: string
+            masterArgs: MasterArgs | undefined
+        }) => Promise<any> | void
+    }
     /** ms to wait for master to become available to supply masterArgs (default 5000) */
     masterArgsWait?: number
 }
 
 let called = false
+
+const workerMap: WorkerMap = {}
 
 /**
  * Resolves when the current start function (master or start depending on context) has
@@ -70,13 +80,13 @@ export async function gru<MasterArgs = undefined>(
     const options: Options<MasterArgs> =
         typeof startOrOptions === 'function'
             ? {
-                  ...DEFAULT_OPTIONS,
-                  start: startOrOptions,
-              }
+                ...DEFAULT_OPTIONS,
+                start: startOrOptions,
+            }
             : {
-                  ...DEFAULT_OPTIONS,
-                  ...deleteUndefinedKeys(startOrOptions),
-              }
+                ...DEFAULT_OPTIONS,
+                ...deleteUndefinedKeys(startOrOptions),
+            }
 
     const logger = options.logger || noopLogger()
 
@@ -86,10 +96,28 @@ export async function gru<MasterArgs = undefined>(
 
     if (cluster.isWorker) {
         const masterArgsInWorker = await getMasterArgsInWorker()
-        const workerStart = options.start({
-            id: cluster.worker.id.toString(),
-            masterArgs: masterArgsInWorker,
-        })
+
+        let workerStart: null | void | Promise<any> = null
+
+        // Is this worker a dedicated worker?
+        // if dedicated, get the dedicated worker name then call the start function with that name
+        if (options.dedicatedWorkers) {
+            const workerName = process.env.GRU_DEDICATED_WORKER_NAME
+            if (workerName) {
+                logger.debug({ workerName }, `Calling start function for dedicated worker`)
+                workerStart = options.dedicatedWorkers[workerName]({
+                    id: cluster.worker.id.toString(),
+                    masterArgs: masterArgsInWorker,
+                })
+            }
+        }
+
+        if (workerStart === null) {
+            workerStart = options.start({
+                id: cluster.worker.id.toString(),
+                masterArgs: masterArgsInWorker,
+            })
+        }
 
         // If the worker start function returns a promise
         // handle errors and shutdown gracefully
@@ -109,7 +137,6 @@ export async function gru<MasterArgs = undefined>(
     let running = true
     const runUntil =
         options.lifetime === 'until-killed' ? options.lifetime : Date.now() + options.lifetime
-
     listen()
     if (options.master) {
         try {
@@ -138,7 +165,12 @@ export async function gru<MasterArgs = undefined>(
         }
     }
 
-    // If # of workers is set to 0, no workers will be started
+    if (options.dedicatedWorkers && Object.keys(options.dedicatedWorkers).length > 0) {
+        resizeDedicatedWorkers()
+        setInterval(resizeDedicatedWorkers, fiveMinutesMS).unref()
+    }
+
+    // If # of workers is set to 0, no generic workers will be started
     // And just run worker start function in master process
     if (options.workers === 0) {
         const workerStart = options.start({ id: 'master', masterArgs })
@@ -150,12 +182,8 @@ export async function gru<MasterArgs = undefined>(
             })
         }
     } else {
-        resizeInterval()
-    }
-
-    function resizeInterval() {
-        setTimeout(resizeInterval, 5 * 60 * 1000 /* 5 mins */).unref()
-        resize()
+        resizeGenericWorkers()
+        setInterval(resizeGenericWorkers, fiveMinutesMS).unref()
     }
 
     function listen() {
@@ -163,10 +191,12 @@ export async function gru<MasterArgs = undefined>(
         process.on('SIGINT', shutdown).on('SIGTERM', shutdown)
     }
 
-    function resize() {
-        const workerCount: number = Object.keys(cluster.workers).length
-        const moreWorkersRequired: number = options.workers - workerCount
+    function resizeGenericWorkers() {
+        const totalWorkerCount: number = Object.keys(cluster.workers).length
+        const dedicatedWorkerCount: number = Object.keys(workerMap).length
+        const genericWorkerCount: number = totalWorkerCount - dedicatedWorkerCount
 
+        const moreWorkersRequired: number = options.workers - genericWorkerCount
         if (moreWorkersRequired > 0) {
             logger.info(`Starting ${moreWorkersRequired} workers`)
             for (let i = 0; i < moreWorkersRequired; i++) {
@@ -176,8 +206,21 @@ export async function gru<MasterArgs = undefined>(
             // TODO: remove excess workers
         }
     }
+    function resizeDedicatedWorkers() {
+        if (!options.dedicatedWorkers || Object.keys(options.dedicatedWorkers).length === 0) {
+            return
+        }
 
-    function startWorker() {
+        Object.keys(options.dedicatedWorkers).map((workerName) => {
+            if (workerMap[workerName]) {
+                logger.debug({ workerName }, `dedicated worker already exists`)
+                return
+            }
+            startWorker(workerName)
+        })
+    }
+
+    function startWorker(workerName?: string) {
         // load environment from config file and add PATH
         const config = process.env.CONFIG_FILE
             ? JSON.parse(fs.readFileSync(process.env.CONFIG_FILE || '').toString())
@@ -185,7 +228,12 @@ export async function gru<MasterArgs = undefined>(
         const env = { ...process.env, ...config }
 
         // launch new worker
-        cluster.fork(env).on('message', workerMessage)
+        const worker = cluster.fork({ GRU_DEDICATED_WORKER_NAME: workerName, ...env }).on('message', workerMessage)
+
+        if (workerName) {
+            // Required so master can keep traffic of the dedicated workers
+            workerMap[workerName] = worker.id
+        }
     }
 
     function workerMessage(msg: WorkerMessages) {
@@ -197,7 +245,7 @@ export async function gru<MasterArgs = undefined>(
 
             const responseMsg: GetArgsResponseMessage<MasterArgs> = {
                 type: 'get-args-response',
-                masterArgs,
+                masterArgs
             }
             worker.send(responseMsg)
         }
@@ -222,14 +270,21 @@ export async function gru<MasterArgs = undefined>(
     function workerExited(worker: cluster.Worker, code: number, signal: string) {
         worker.removeListener('message', workerMessage)
 
+        const workerName = getWorkerName(worker.id, workerMap)
+        if (workerName) {
+            logger.debug({ workerName }, `Worker exited`)
+            delete workerMap[workerName]
+        }
+
         if (!running || worker.exitedAfterDisconnect) {
             return
         }
         if (runUntil === 'until-killed' || Date.now() < runUntil) {
             logger.warn(`worker ${worker.process.pid} died (${signal || code}). restarting...`)
 
-            // Start a new worker(s) to replace exited
-            resize()
+            // Start new worker(s) to replace exited
+            resizeGenericWorkers()
+            resizeDedicatedWorkers()
         }
     }
 

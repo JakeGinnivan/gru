@@ -6,7 +6,7 @@ gru({
     logger,
     workers: 3,
     start: () => {
-        logger.info('worker')
+        logger.info('worker output')
 
         process.on('SIGTERM', () => {
             logger.info('exiting worker')

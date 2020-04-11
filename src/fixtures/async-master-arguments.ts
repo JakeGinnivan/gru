@@ -12,13 +12,13 @@ gru<Args>({
     master: () =>
         new Promise(resolve => setTimeout(resolve, 500)).then<Args>(() => {
             // eslint-disable-next-line no-console
-            console.log('master')
+            console.log('master output')
 
             return { test: 1, test2: ['val'] }
         }),
     start: ({ masterArgs }) => {
         // eslint-disable-next-line no-console
-        console.log('worker', masterArgs)
+        console.log('worker received', masterArgs)
         process.exit()
     },
 })

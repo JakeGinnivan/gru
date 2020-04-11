@@ -1,7 +1,5 @@
 import path from 'path'
 import os from 'os'
-// import fs from 'fs'
-// import fetch from 'isomorphic-fetch'
 import { spawn, SpawnOptions, ChildProcess } from 'child_process'
 
 import { consoleLogger, Levels } from 'typescript-log'
@@ -27,6 +25,9 @@ const killCmd = getPath('kill')
 const infiniteCmd = getPath('infinite')
 const inlineWorkerCmd = getPath('inline-worker')
 const inlineWorkerFailCmd = getPath('inline-worker-fail')
+const dedicatedWorkersCmd = getPath('dedicated-workers')
+const dedicatedAndGenericWorkersCmd = getPath('dedicated-and-generic-workers')
+const dedicatedAndInlineWorkerCmd = getPath('dedicated-and-inline-worker')
 
 describe('with no start function', () => {
     it('throws an error', async () => {
@@ -37,9 +38,40 @@ describe('with no start function', () => {
 
 it('can run a worker inline', async () => {
     const result = await run(inlineWorkerCmd, {})
-    expect(result.stdout).toBe(`master
-worker
+    expect(result.stdout).toBe(`master output
+worker output
 `)
+})
+
+it('can run dedicated workers', async () => {
+    const result = await run(dedicatedWorkersCmd, {})
+
+    // Dedicated worker start-up order is not guaranteed as inter-process communication is required
+    expect(result.stdout).toContain('master output')
+    expect(result.stdout).toContain('worker1 output')
+    expect(result.stdout).toContain('worker2 output')
+})
+
+it('can run both dedicated and generic workers', async () => {
+    const result = await run(dedicatedAndGenericWorkersCmd, {})
+
+    expect(result.stdout).toContain('master output')
+    expect(result.stdout).toContain('worker1 output')
+    expect(result.stdout).toContain('worker2 output')
+
+    const starts = result.stdout.match(/generic worker output$/gm)
+    expect(starts).toHaveLength(3)
+})
+
+it('can run both dedicated and an inline worker', async () => {
+    const result = await run(dedicatedAndInlineWorkerCmd, {})
+
+    expect(result.stdout).toContain('master output')
+    expect(result.stdout).toContain('worker1 output')
+    expect(result.stdout).toContain('worker2 output')
+
+    const starts = result.stdout.match(/inline generic worker output$/gm)
+    expect(starts).toHaveLength(1)
 })
 
 it('exits when inline worker fails to start', async () => {
@@ -77,10 +109,12 @@ describe('with a start function and 3 workers', () => {
     describe('with no lifetime specified', () => {
         it('starts 3 workers repeatedly', async () => {
             const result = await run(infiniteCmd, {}, (child) =>
-                setTimeout(() => child.kill(), 1000),
+                setTimeout(() => {
+                    child.kill()
+                }, 2000)
             )
 
-            const starts = result.stdout.match(/worker$/gm)
+            const starts = result.stdout.match(/worker output$/gm)
 
             expect(starts && starts.length).toBeGreaterThan(3)
         })
@@ -127,9 +161,9 @@ describe('signal handling', () => {
             const result = await run(gracefulCmd, {}, (child) =>
                 setTimeout(() => {
                     child.kill()
-                }, 750),
+                }, 1000),
             )
-            const starts = result.stdout.match(/INFO worker$/gm)
+            const starts = result.stdout.match(/INFO worker output$/gm)
 
             expect(starts && starts.length).toBe(3)
         })
@@ -138,7 +172,7 @@ describe('signal handling', () => {
             const result = await run(gracefulCmd, {}, (child) =>
                 setTimeout(() => {
                     child.kill()
-                }, 750),
+                }, 1000),
             )
             const exits = result.stdout.match(/exiting/g)
 
@@ -148,14 +182,14 @@ describe('signal handling', () => {
 
     describe('with 3 workers that fail to exit', () => {
         it('starts 3 workers', async () => {
-            const result = await run(killCmd, {}, (child) => setTimeout(() => child.kill(), 750))
+            const result = await run(killCmd, {}, (child) => setTimeout(() => child.kill(), 1000))
             const starts = result.stdout.match(/ah ha ha ha/g)
 
             expect(starts).toHaveLength(3)
         })
 
         it('notifies the workers that they should exit', async () => {
-            const result = await run(killCmd, {}, (child) => setTimeout(() => child.kill(), 750))
+            const result = await run(killCmd, {}, (child) => setTimeout(() => child.kill(), 1000))
             const exits = result.stdout.match(/stayin alive/g)
 
             expect(exits).toHaveLength(3)
@@ -182,10 +216,10 @@ worker
     it('can pass initialisation value to workers', async () => {
         const result = await run(asyncMasterArgumentsCmd, {})
 
-        expect(result.stdout).toBe(`master
+        expect(result.stdout).toBe(`master output
  INFO Starting 2 workers
-worker { test: 1, test2: [ 'val' ] }
-worker { test: 1, test2: [ 'val' ] }
+worker received { test: 1, test2: [ 'val' ] }
+worker received { test: 1, test2: [ 'val' ] }
 `)
     })
 
