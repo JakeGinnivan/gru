@@ -6,6 +6,12 @@ Gru is a node clustering helper, because he is the master of the minions
 
 Is a Fork of https://github.com/hunterloftis/throng with quite a few improvements relating to having a separate startup and running phase.
 
+A single master can control two kinds of workers:
+
+- Generic workers. Workers who all perform the same task
+
+- Dedicated workers. Workers who each perform a unique task.
+
 ## Usage
 
 ```ts
@@ -20,7 +26,15 @@ gru({
         // Master initialisation here
     },
     start: async () => {
-        // Worker initialisation
+        // Generic worker initialisation
+    },
+    dedicatedWorkers: {
+        uniqueTask1: () => {
+            // Dedicated worker initialization
+        },
+        uniqueTask2: () => {
+            // Dedicated worker initialization
+        },
     },
 })
 ```
@@ -31,7 +45,7 @@ gru({
 
 ### workers
 
-Number of workers, if 0, starts in process (useful for debugging). Defaults to # of cpu cores
+Number of generic workers, if 0, starts in process (useful for debugging). Defaults to # of cpu cores
 
 ### lifetime
 
@@ -63,7 +77,7 @@ gru({
         return { config }
     },
     start: ({ masterArgs }) => {
-        masrterArgs.config // will be the config returned from the master process
+        masterArgs.config // will be the config returned from the master process
     },
 })
 ```
@@ -74,3 +88,26 @@ The worker callback.
 
 If the worker returns a promise and it rejects, it signals to gru that the worker failed to start and will not be restarted.
 Once a worker has started the lifecycle policy will apply (ie workers which crash will be restarted)
+
+### dedicatedWorkers
+
+The set of unique worker processes.
+
+#### example
+
+```ts
+gru({
+    master: async () => {
+    },
+    start: () => {
+    },
+    dedicatedWorkers: {
+        express: () => {
+            // Start an Express server
+        },
+        fileIngestion: () => {
+            // Monitor a directory for zip files to process
+        },
+    },
+})
+```
