@@ -4,7 +4,7 @@
 
 ### Minor Changes
 
--   bb333d8: Release using new build projectss
+-   bb333d8: Released dedicated workers
 
 ## 1.2.0
 
