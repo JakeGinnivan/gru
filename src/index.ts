@@ -1,4 +1,4 @@
-import cluster from 'cluster'
+import cluster, { Worker } from 'cluster'
 import os from 'os'
 import fs from 'fs'
 
@@ -94,7 +94,8 @@ export async function gru<MasterArgs = undefined>(
         throw new Error('Start function required')
     }
 
-    if (cluster.isWorker) {
+    if (cluster.isWorker && cluster.worker) {
+        const worker: Worker = cluster.worker
         const masterArgsInWorker = await getMasterArgsInWorker()
 
         let workerStart: null | void | Promise<any> = null
@@ -106,7 +107,7 @@ export async function gru<MasterArgs = undefined>(
             if (workerName) {
                 logger.debug({ workerName }, `Calling start function for dedicated worker`)
                 workerStart = options.dedicatedWorkers[workerName]({
-                    id: cluster.worker.id.toString(),
+                    id: worker.id.toString(),
                     masterArgs: masterArgsInWorker,
                 })
             }
@@ -114,7 +115,7 @@ export async function gru<MasterArgs = undefined>(
 
         if (workerStart === null) {
             workerStart = options.start({
-                id: cluster.worker.id.toString(),
+                id: worker.id.toString(),
                 masterArgs: masterArgsInWorker,
             })
         }
@@ -125,9 +126,9 @@ export async function gru<MasterArgs = undefined>(
             workerStart.catch((err) => {
                 logger.error(
                     { err },
-                    `Worker ${cluster.worker.id} failed to start, shutting down worker`,
+                    `Worker ${worker.id} failed to start, shutting down worker`,
                 )
-                cluster.worker.kill()
+                worker.kill()
             })
         }
         return
@@ -148,7 +149,7 @@ export async function gru<MasterArgs = undefined>(
                     if (masterResult) {
                         masterArgs = masterResult
                     }
-                } catch (err) {
+                } catch (err: any) {
                     // eslint-disable-next-line no-console
                     console.error(err)
                     logger.error({ err }, 'Master failed to start')
@@ -156,7 +157,7 @@ export async function gru<MasterArgs = undefined>(
                     return
                 }
             }
-        } catch (err) {
+        } catch (err: any) {
             // eslint-disable-next-line no-console
             console.error(err)
             logger.error({ err }, 'Master failed to start')
@@ -192,6 +193,9 @@ export async function gru<MasterArgs = undefined>(
     }
 
     function resizeGenericWorkers() {
+        if (!cluster.workers) {
+            return
+        }
         const totalWorkerCount: number = Object.keys(cluster.workers).length
         const dedicatedWorkerCount: number = Object.keys(workerMap).length
         const genericWorkerCount: number = totalWorkerCount - dedicatedWorkerCount
@@ -238,7 +242,7 @@ export async function gru<MasterArgs = undefined>(
 
     function workerMessage(msg: WorkerMessages) {
         if (msg.type === 'get-args') {
-            const worker = cluster.workers[msg.workerId]
+            const worker = cluster.workers![msg.workerId]
             if (!worker) {
                 return
             }
@@ -267,7 +271,7 @@ export async function gru<MasterArgs = undefined>(
         setTimeout(forceKill, options.grace).unref()
     }
 
-    function workerExited(worker: cluster.Worker, code: number, signal: string) {
+    function workerExited(worker: Worker, code: number, signal: string) {
         worker.removeListener('message', workerMessage)
 
         const workerName = getWorkerName(worker.id, workerMap)
@@ -323,7 +327,7 @@ export async function gru<MasterArgs = undefined>(
                 // Then send a message to master to get the arguments
                 const msg: GetArgsMessage = {
                     type: 'get-args',
-                    workerId: cluster.worker.id,
+                    workerId: cluster.worker!.id,
                 }
                 process.send(msg)
             } else {
