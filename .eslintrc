@@ -1,6 +1,14 @@
 {
-    "extends": ["wanews-base"],
+    "root": true,
+    "parser": "@typescript-eslint/parser",
+    "plugins": [
+        "@typescript-eslint"
+    ],
+    "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended"
+    ],
     "rules": {
-        "@typescript-eslint/no-unused-vars": [1, { "ignore-pattern": "^_" }]
+        "@typescript-eslint/no-explicit-any": "off"
     }
 }

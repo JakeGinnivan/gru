@@ -10,7 +10,7 @@ const fiveMinutesMS = 5 * 60 * 1000
 
 const DEFAULT_OPTIONS = {
     workers: cpuCount,
-    lifetime: 'until-killed' as 'until-killed',
+    lifetime: 'until-killed' as const,
     grace: 5000,
     masterArgsWait: 5000,
 }
@@ -242,7 +242,7 @@ export async function gru<MasterArgs = undefined>(
 
     function workerMessage(msg: WorkerMessages) {
         if (msg.type === 'get-args') {
-            const worker = cluster.workers![msg.workerId]
+            const worker = cluster.workers?.[msg.workerId]
             if (!worker) {
                 return
             }
@@ -310,6 +310,12 @@ export async function gru<MasterArgs = undefined>(
     function getMasterArgsInWorker() {
         return new Promise<MasterArgs | undefined>((resolve) => {
             if (process.send) {
+                if (!cluster.worker) {
+                    logger.warn("cluster.worker undefined, can't identify working when requesting master args")
+                    resolve(undefined)
+                    return
+                }
+
                 // And a 5 second timeout
                 const timeoutId = setTimeout(() => {
                     logger.warn(
@@ -327,7 +333,7 @@ export async function gru<MasterArgs = undefined>(
                 // Then send a message to master to get the arguments
                 const msg: GetArgsMessage = {
                     type: 'get-args',
-                    workerId: cluster.worker!.id,
+                    workerId: cluster.worker.id,
                 }
                 process.send(msg)
             } else {
