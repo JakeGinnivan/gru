@@ -1,5 +1,11 @@
 # node-gru
 
+## 1.3.1
+
+### Patch Changes
+
+-   be65cba: maintenance release to review and update dependencies
+
 ## 1.3.0
 
 ### Minor Changes
