@@ -150,7 +150,7 @@ export async function gru<MasterArgs = undefined>(
                         masterArgs = masterResult
                     }
                 } catch (err: any) {
-                    // eslint-disable-next-line no-console
+                     
                     console.error(err)
                     logger.error({ err }, 'Master failed to start')
                     shutdown()
@@ -158,7 +158,7 @@ export async function gru<MasterArgs = undefined>(
                 }
             }
         } catch (err: any) {
-            // eslint-disable-next-line no-console
+             
             console.error(err)
             logger.error({ err }, 'Master failed to start')
             shutdown()
@@ -346,9 +346,9 @@ export async function gru<MasterArgs = undefined>(
 
 function deleteUndefinedKeys<T extends object>(obj: T): T {
     Object.keys(obj).forEach((key) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         if ((obj as any)[key] === undefined) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+             
             delete (obj as any)[key]
         }
     })

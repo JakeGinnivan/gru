@@ -7,7 +7,7 @@ gru({
     workers: 2,
     master: () => Promise.reject(new Error('Failed to start')),
     start: () => {
-        // eslint-disable-next-line no-console
+         
         console.log('worker')
         process.exit()
     },

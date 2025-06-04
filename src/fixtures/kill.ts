@@ -4,15 +4,26 @@ import { consoleLogger } from 'typescript-log'
 gru({
     logger: consoleLogger('debug'),
     workers: 3,
-    lifetime: 0,
-    grace: 250,
+    lifetime: 'until-killed',
+    grace: 100,
     start: () => {
-        // eslint-disable-next-line no-console
         console.log('ah ha ha ha')
 
+        let sigtermCount = 0
+
         process.on('SIGTERM', () => {
-            // eslint-disable-next-line no-console
-            console.log('stayin alive')
+            sigtermCount++
+
+            if (sigtermCount === 1) {
+                // Notified to kill the worker
+                console.log('stayin alive')
+            } else if (sigtermCount === 2) {
+                // force killed after the grace period
+                console.log('force killed')
+            } else {
+                // Should never happen
+                console.log(`sigterm ${sigtermCount}`)
+            }
         })
     },
 })

@@ -9,7 +9,7 @@ gru({
         throw new Error('Failed to start')
     },
     start: () => {
-        // eslint-disable-next-line no-console
+         
         console.log('worker')
         process.exit()
     },
