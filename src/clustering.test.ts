@@ -32,8 +32,9 @@ const dedicatedAndInlineWorkerCmd = getPath('dedicated-and-inline-worker')
 // eg characters meant to colourize terminal output
 function strictSanitize(input: string) {
     return input
+        // eslint-disable-next-line no-control-regex
         .replace(/\x1B\[[0-9;]*m/g, '')  // Remove ANSI escape codes
-        .replace(/[^a-zA-Z0-9,\[\]\{\}\(\): '\n]/g, '');  // Keep only desired characters;
+        .replace(/[^a-zA-Z0-9,[]{}(): '\n]/g, '');  // Keep only desired characters;
 }
 
 describe('with no start function', () => {
