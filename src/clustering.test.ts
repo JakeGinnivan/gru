@@ -28,6 +28,14 @@ const dedicatedWorkersCmd = getPath('dedicated-workers')
 const dedicatedAndGenericWorkersCmd = getPath('dedicated-and-generic-workers')
 const dedicatedAndInlineWorkerCmd = getPath('dedicated-and-inline-worker')
 
+// Required to remove invisible characters from the output
+// eg characters meant to colourize terminal output
+function strictSanitize(input: string) {
+    return input
+        .replace(/\x1B\[[0-9;]*m/g, '')  // Remove ANSI escape codes
+        .replace(/[^a-zA-Z0-9,\[\]\{\}\(\): '\n]/g, '');  // Keep only desired characters;
+}
+
 describe('with no start function', () => {
     it('throws an error', async () => {
         const result = await run(throwsCmd, {})
@@ -75,7 +83,10 @@ it('can run both dedicated and an inline worker', async () => {
 
 it('exits when inline worker fails to start', async () => {
     const result = await run(inlineWorkerFailCmd, {})
-    expect(result.stdout).toContain(`Inline worker failed to start, exiting`)
+    const output = strictSanitize(result.stdout.trim());
+    expect(output).toBe(`master
+worker
+ERROR { err: 'oops' } Inline worker failed to start, exiting`)
 })
 
 describe('with a start function and 3 workers', () => {
@@ -211,12 +222,6 @@ worker
 `)
     })
 
-    function strictSanitize(input: string) {
-        return input
-            .replace(/\x1B\[[0-9;]*m/g, '')  // Remove ANSI escape codes
-            .replace(/[^a-zA-Z0-9,\[\]\{\}\n]/g, '');  // Keep only desired characters;
-    }
-
     it('can pass initialisation value to workers', async () => {
         const result = await run(asyncMasterArgumentsCmd, {})
 
@@ -244,10 +249,16 @@ worker received { test: 1, test2: [ 'val' ] }`))
 describe('worker initialisation', () => {
     it('when worker fails to initialse, it is not restarted', async () => {
         const result = await run(asyncWorkerFailureCmd, {})
+        const output = strictSanitize(result.stdout.trim());
 
-        expect(result.stdout).toContain(`INFO Starting 2 workers`)
-        expect(result.stdout).toContain(`Worker 1 failed to start, shutting down worker`)
-        expect(result.stdout).toContain(`Worker 2 failed to start, shutting down worker`)
+        expect(output).toMatch(
+            new RegExp(`master
+ INFO Starting 2 workers
+worker
+worker
+ERROR { err: 'Failed to start worker' } Worker \\d failed to start, shutting down worker
+ERROR { err: 'Failed to start worker' } Worker \\d failed to start, shutting down worker`),
+        )
     })
 })
 
