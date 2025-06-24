@@ -1,4 +1,4 @@
-import { gru } from '../'
+import { gru } from '../index.js'
 import { consoleLogger } from 'typescript-log'
 
 const logger = consoleLogger('debug')

@@ -1,9 +1,11 @@
 import path from 'path'
+import { fileURLToPath } from 'url'
 import os from 'os'
 import { spawn, SpawnOptions, ChildProcess } from 'child_process'
 import { consoleLogger, Levels } from 'typescript-log'
 
 const cpuCount = os.cpus().length
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const getPath = (mod: string) => path.join(__dirname, 'fixtures', mod)
 const testLogger = consoleLogger((process.env.LOG_LEVEL as Levels | undefined) || 'warn')
