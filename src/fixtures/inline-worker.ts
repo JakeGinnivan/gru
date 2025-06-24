@@ -6,11 +6,9 @@ gru({
     lifetime: 0,
     workers: 0,
     master: () => {
-         
         console.log('master output')
     },
     start: () => {
-         
         console.log('worker output')
     },
 })

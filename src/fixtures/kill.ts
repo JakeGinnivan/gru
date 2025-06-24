@@ -7,7 +7,7 @@ gru({
     lifetime: 'until-killed',
     grace: 100,
     start: () => {
-        console.log('ah ha ha ha')
+        console.log('started worker')
 
         let sigtermCount = 0
 
@@ -16,10 +16,10 @@ gru({
 
             if (sigtermCount === 1) {
                 // Notified to kill the worker
-                console.log('stayin alive')
+                console.log('worker received sigterm')
             } else if (sigtermCount === 2) {
                 // force killed after the grace period
-                console.log('force killed')
+                console.log('worker killed after grace period')
             } else {
                 // Should never happen
                 console.log(`sigterm ${sigtermCount}`)

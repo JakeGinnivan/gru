@@ -7,11 +7,10 @@ gru({
     workers: 2,
     master: () =>
         new Promise(resolve => setTimeout(resolve, 500)).then<void>(() => {
-             
+
             console.log('master')
         }),
     start: () => {
-         
         console.log('worker')
         process.exit()
     },

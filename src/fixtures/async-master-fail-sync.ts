@@ -9,7 +9,6 @@ gru({
         throw new Error('Failed to start')
     },
     start: () => {
-         
         console.log('worker')
         process.exit()
     },

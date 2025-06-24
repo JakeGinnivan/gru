@@ -3,10 +3,6 @@ import os from 'os'
 import { spawn, SpawnOptions, ChildProcess } from 'child_process'
 import { consoleLogger, Levels } from 'typescript-log'
 
-/*function stripAnsi(str: string): string {
-    return str.replace(/\u001b\[\d{1,3}m/g, '');
-}*/
-
 const cpuCount = os.cpus().length
 
 const getPath = (mod: string) => path.join(__dirname, 'fixtures', mod)
@@ -183,16 +179,18 @@ describe('signal handling', () => {
     describe('with 3 workers that fail to exit', () => {
         it('starts 3 workers', async () => {
             const result = await run(killCmd, {}, (child) => setTimeout(() => child.kill(), 1000))
-            const starts = result.stdout.match(/ah ha ha ha/g)
+            const starts = result.stdout.match(/started worker/g)
 
             expect(starts).toHaveLength(3)
         })
 
         it('notifies the workers that they should exit', async () => {
             const result = await run(killCmd, {}, (child) => setTimeout(() => child.kill(), 400))
-            const exits = result.stdout.match(/stayin alive/g)
+            const exits = result.stdout.match(/worker received sigterm/g)
+            const forceKills = result.stdout.match(/worker killed after grace period/g)
 
             expect(exits).toHaveLength(3)
+            expect(forceKills).toHaveLength(3)
         })
 
         it('kills the workers after 250ms grace', async () => {

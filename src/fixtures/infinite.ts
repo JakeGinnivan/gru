@@ -5,7 +5,6 @@ gru({
     logger: consoleLogger('debug'),
     workers: 3,
     start: () => {
-         
         console.log('worker output')
         process.exit()
     },
