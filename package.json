@@ -7,8 +7,8 @@
     "license": "MIT",
     "scripts": {
         "build": "yarn build:es2022 && yarn build:cjs",
-        "build:es2022": "tsc -p ./tsconfig.build.json --target es2022 --outDir dist/es2022",
-        "build:cjs": "tsc -p ./tsconfig.build.json --module commonjs --target es5 --outDir dist/cjs",
+        "build:es2022": "tsc -p ./tsconfig.build.json --target es2022 --module Node16 --outDir dist/es2022",
+        "build:cjs": "tsc -p ./tsconfig.build.json --target es2018 --module commonjs --moduleResolution node --outDir dist/cjs",
         "pretest": "tsc -p src/fixtures --noEmit false",
         "test": "NODE_OPTIONS='--experimental-vm-modules' yarn jest",
         "lint": "eslint --ext .js,.ts src",

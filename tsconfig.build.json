@@ -4,8 +4,7 @@
         "noEmit": false /* Do not emit outputs. */,
         "importHelpers": true /* Import emit helpers from 'tslib'. */,
         "noEmitHelpers": true,
-        "module": "es2022",
-        "moduleResolution": "node",
+        "moduleResolution": "Node16",
         "skipLibCheck": true
     },
     "exclude": [
