@@ -1,4 +1,4 @@
-import { gru } from '../'
+import { gru } from '../index.js'
 import { consoleLogger } from 'typescript-log'
 
 gru({
@@ -9,7 +9,6 @@ gru({
         throw new Error('Failed to start')
     },
     start: () => {
-        // eslint-disable-next-line no-console
         console.log('worker')
         process.exit()
     },

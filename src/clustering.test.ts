@@ -1,10 +1,11 @@
 import path from 'path'
+import { fileURLToPath } from 'url'
 import os from 'os'
 import { spawn, SpawnOptions, ChildProcess } from 'child_process'
-
 import { consoleLogger, Levels } from 'typescript-log'
 
 const cpuCount = os.cpus().length
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const getPath = (mod: string) => path.join(__dirname, 'fixtures', mod)
 const testLogger = consoleLogger((process.env.LOG_LEVEL as Levels | undefined) || 'warn')
@@ -28,6 +29,15 @@ const inlineWorkerFailCmd = getPath('inline-worker-fail')
 const dedicatedWorkersCmd = getPath('dedicated-workers')
 const dedicatedAndGenericWorkersCmd = getPath('dedicated-and-generic-workers')
 const dedicatedAndInlineWorkerCmd = getPath('dedicated-and-inline-worker')
+
+// Required to remove invisible characters from the output
+// eg characters meant to colourize terminal output
+function strictSanitize(input: string) {
+    return input
+        // eslint-disable-next-line no-control-regex
+        .replace(/\x1B\[[0-9;]*m/g, '')  // Remove ANSI escape codes
+        .replace(/[^a-zA-Z0-9,[]{}(): '\n]/g, '');  // Keep only desired characters;
+}
 
 describe('with no start function', () => {
     it('throws an error', async () => {
@@ -76,10 +86,10 @@ it('can run both dedicated and an inline worker', async () => {
 
 it('exits when inline worker fails to start', async () => {
     const result = await run(inlineWorkerFailCmd, {})
-    expect(result.stdout).toBe(`master
+    const output = strictSanitize(result.stdout.trim());
+    expect(output).toBe(`master
 worker
-ERROR { err: 'oops' } Inline worker failed to start, exiting
-`)
+ERROR { err: 'oops' } Inline worker failed to start, exiting`)
 })
 
 describe('with a start function and 3 workers', () => {
@@ -183,19 +193,21 @@ describe('signal handling', () => {
     describe('with 3 workers that fail to exit', () => {
         it('starts 3 workers', async () => {
             const result = await run(killCmd, {}, (child) => setTimeout(() => child.kill(), 1000))
-            const starts = result.stdout.match(/ah ha ha ha/g)
+            const starts = result.stdout.match(/started worker/g)
 
             expect(starts).toHaveLength(3)
         })
 
         it('notifies the workers that they should exit', async () => {
-            const result = await run(killCmd, {}, (child) => setTimeout(() => child.kill(), 1000))
-            const exits = result.stdout.match(/stayin alive/g)
+            const result = await run(killCmd, {}, (child) => setTimeout(() => child.kill(), 400))
+            const exits = result.stdout.match(/worker received sigterm/g)
+            const forceKills = result.stdout.match(/worker killed after grace period/g)
 
             expect(exits).toHaveLength(3)
+            expect(forceKills).toHaveLength(3)
         })
 
-        it('kills the workers after 250ms', async () => {
+        it('kills the workers after 250ms grace', async () => {
             const result = await run(killCmd, {}, (child) => setTimeout(() => child.kill(), 750))
             expect(result.endTime - result.startTime - 1000).toBeLessThan(100)
         })
@@ -216,11 +228,12 @@ worker
     it('can pass initialisation value to workers', async () => {
         const result = await run(asyncMasterArgumentsCmd, {})
 
-        expect(result.stdout).toBe(`master output
+        const output = strictSanitize(result.stdout.trim());
+
+        expect(output).toBe(strictSanitize(`master output
  INFO Starting 2 workers
 worker received { test: 1, test2: [ 'val' ] }
-worker received { test: 1, test2: [ 'val' ] }
-`)
+worker received { test: 1, test2: [ 'val' ] }`))
     })
 
     it('exits process when master fails to initialise', async () => {
@@ -239,15 +252,15 @@ worker received { test: 1, test2: [ 'val' ] }
 describe('worker initialisation', () => {
     it('when worker fails to initialse, it is not restarted', async () => {
         const result = await run(asyncWorkerFailureCmd, {})
+        const output = strictSanitize(result.stdout.trim());
 
-        expect(result.stdout).toMatch(
+        expect(output).toMatch(
             new RegExp(`master
  INFO Starting 2 workers
 worker
 worker
 ERROR { err: 'Failed to start worker' } Worker \\d failed to start, shutting down worker
-ERROR { err: 'Failed to start worker' } Worker \\d failed to start, shutting down worker
-`),
+ERROR { err: 'Failed to start worker' } Worker \\d failed to start, shutting down worker`),
         )
     })
 })

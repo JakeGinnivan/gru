@@ -1,4 +1,4 @@
-import { gru } from '../'
+import { gru } from '../index.js'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 gru({} as any)

@@ -3,7 +3,13 @@
     "compilerOptions": {
         "noEmit": false /* Do not emit outputs. */,
         "importHelpers": true /* Import emit helpers from 'tslib'. */,
-        "noEmitHelpers": true
+        "noEmitHelpers": true,
+        "moduleResolution": "Node16",
+        "skipLibCheck": true
     },
-    "exclude": ["dist", "**/*test.ts", "**/fixtures/*"]
+    "exclude": [
+        "dist",
+        "**/*test.ts",
+        "**/fixtures/*"
+    ]
 }

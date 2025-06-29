@@ -1,4 +1,4 @@
-import { getWorkerName, WorkerMap } from "./worker-map"
+import { getWorkerName, WorkerMap } from "./worker-map.js"
 
 const testWorkMap: WorkerMap = { 'worker 1': 7, 'worker 2': 15 }
 
